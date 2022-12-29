@@ -16,8 +16,9 @@ public class SseHandler {
     Map<String, ConcurrentHashMap<String, SseEmitter>> userEmittersMap = new ConcurrentHashMap<>();
 
     public SseEmitter register(String user) {
-        var newEmitter = new SseEmitter(60 * 1000L);
         var newEmitterId = UUID.randomUUID().toString();
+
+        var newEmitter = this.createEmitter(user, newEmitterId, 24 * 60 * 60 * 1_000L);
 
         if (userEmittersMap.containsKey(user)) {
             userEmittersMap.get(user).put(newEmitterId, newEmitter);
@@ -30,21 +31,54 @@ public class SseHandler {
         return newEmitter;
     }
 
-    public void emit(SseEmitter.SseEventBuilder sseEventBuilder) {
-        userEmittersMap.forEach((user, emittersMap) -> {
+    public void remove(String user, String emitterId) {
+        if (userEmittersMap.containsKey(user)) {
+            var emittersMap = userEmittersMap.get(user);
+            emittersMap.remove(emitterId);
+
+            if (emittersMap.isEmpty()) {
+                userEmittersMap.remove(user);
+            }
+        }
+    }
+
+    public void emit(SseEmitter.SseEventBuilder sseEventBuilder, String user) {
+        if (userEmittersMap.containsKey(user)) {
+            var emittersMap = userEmittersMap.get(user);
+
             emittersMap.forEach((id, emitter) -> {
                 try {
+                    log.debug("Sending data to emitter {}: {}", id, sseEventBuilder);
                     emitter.send(sseEventBuilder);
                 } catch (IOException e) {
-                    log.error("Failed to send event - Removing emitter {}", id);
-
-                    emittersMap.remove(id);
-                    if (emittersMap.isEmpty()) {
-                        userEmittersMap.remove(user);
-                    }
+                    log.error("Failed to send data - Removing emitter {}", id);
+                    this.remove(user, id);
                 }
             });
+        }
+    }
+
+    public void emit(SseEmitter.SseEventBuilder sseEventBuilder) {
+        userEmittersMap.forEach((user, emittersMap) ->  emit(sseEventBuilder, user));
+    }
+
+    private SseEmitter createEmitter(String user, String id, Long timeout) {
+        var sseEmitter = new SseEmitter(timeout);
+
+        sseEmitter.onCompletion(() -> {
+            log.info("Emitter {} completed", id);
+            remove(user, id);
         });
+        sseEmitter.onTimeout(() -> {
+            log.info("Emitter {} timed out", id);
+            remove(user, id);
+        });
+        sseEmitter.onError(error -> {
+            log.error("Error occurred on emitter {}: ", id, error);
+            remove(user, id);
+        });
+
+        return sseEmitter;
     }
 
 }

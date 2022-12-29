@@ -15,7 +15,7 @@ public class SseController {
     private final SseHandler sseHandler;
 
     @GetMapping
-    SseEmitter register(@RequestParam String user) {
+    public SseEmitter register(@RequestParam String user) {
         return sseHandler.register(user);
     }
 
