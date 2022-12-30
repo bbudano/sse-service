@@ -1,5 +1,6 @@
 package com.example.sseservice;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -11,9 +12,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class SseHandler {
 
     Map<String, ConcurrentHashMap<String, SseEmitter>> userEmittersMap = new ConcurrentHashMap<>();
+
+    private final QueueBinder queueBinder;
 
     public SseEmitter register(String user) {
         var newEmitterId = UUID.randomUUID().toString();
@@ -25,7 +29,10 @@ public class SseHandler {
         } else {
             var emittersMap = new ConcurrentHashMap<String, SseEmitter>();
             emittersMap.put(newEmitterId, newEmitter);
+
             userEmittersMap.put(user, emittersMap);
+
+            queueBinder.bind(user);
         }
 
         return newEmitter;
@@ -38,6 +45,7 @@ public class SseHandler {
 
             if (emittersMap.isEmpty()) {
                 userEmittersMap.remove(user);
+                queueBinder.unbind(user);
             }
         }
     }
