@@ -1,4 +1,4 @@
-package com.example.sseservice;
+package com.example.sseservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

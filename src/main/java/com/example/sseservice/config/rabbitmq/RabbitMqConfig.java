@@ -1,4 +1,4 @@
-package com.example.sseservice;
+package com.example.sseservice.config.rabbitmq;
 
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;

@@ -1,5 +1,6 @@
-package com.example.sseservice;
+package com.example.sseservice.controller;
 
+import com.example.sseservice.service.SseHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;

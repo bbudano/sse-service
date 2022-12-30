@@ -1,5 +1,6 @@
-package com.example.sseservice;
+package com.example.sseservice.config.rabbitmq;
 
+import com.example.sseservice.service.SseHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
