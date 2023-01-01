@@ -1,6 +1,32 @@
+version: '3.8'
+
+networks:
+  sse-demo:
+    name: sse-demo
+    driver: bridge
+
 services:
   rabbitmq:
     image: rabbitmq:management
     ports:
       - "5672:5672"
       - "15672:15672"
+    networks:
+      - sse-demo
+
+  sse-service:
+    build: .
+    image: sse-service
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    healthcheck:
+      test: "curl --fail --silent http://localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 30s
+      timeout: 5s
+    restart: always
+    networks:
+      - sse-demo
+    ports:
+      - "8080:8080"
+    depends_on:
+      - rabbitmq
